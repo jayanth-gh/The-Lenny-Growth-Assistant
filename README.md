@@ -42,7 +42,7 @@ ollama --version
 
 ```powershell
 cd $HOME\Documents
-git clone https://github.com/Sanjana28-a11y/The-Lenny-Growth-Assistant.git
+git clone https://github.com/jayanth-gh/The-Lenny-Growth-Assistant.git
 cd .\The-Lenny-Growth-Assistant
 git status
 ```
