@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, Loader2, Rocket, Layout, BookOpen } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 import { ChatMessage } from './components/ChatMessage';
@@ -30,12 +30,10 @@ export function App() {
   const [inputPrompt, setInputPrompt] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Provider Settings State (Defaults to Ollama Local for mandatory demo requirements)
   const [provider, setProvider] = useState<string>('ollama');
   const [model, setModel] = useState<string>('llama3.2');
   const [modelsData, setModelsData] = useState<ModelsResponse | null>(null);
 
-  // UI Drawer/Modal States
   const [activeArtifact, setActiveArtifact] = useState<Artifact | null>(null);
   const [selectedCitation, setSelectedCitation] = useState<Citation | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -47,14 +45,17 @@ export function App() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load initial sessions and models configuration
   useEffect(() => {
     async function init() {
       try {
         const modelsRes = await fetchModels();
         setModelsData(modelsRes);
+        if (modelsRes?.active_default) {
+          setProvider(modelsRes.active_default.provider);
+          setModel(modelsRes.active_default.model);
+        }
       } catch (err) {
-        console.warn("Could not fetch models data on startup:", err);
+        console.warn('Could not fetch models data on startup:', err);
       }
 
       try {
@@ -64,45 +65,46 @@ export function App() {
         if (sess.length > 0) {
           setActiveSessionId(sess[0].id);
         } else {
-          const newSess = await createSession("New Growth Session", provider, model);
+          const newSess = await createSession('New Growth Session', provider, model);
           setSessions([newSess]);
           setActiveSessionId(newSess.id);
         }
       } catch (err) {
-        console.warn("Could not fetch sessions on startup, will create on demand:", err);
+        console.warn('Could not fetch sessions on startup, will create on demand:', err);
       }
     }
     init();
   }, []);
 
-  // Fetch messages when active session changes
   useEffect(() => {
-    if (!activeSessionId) return;
+    const sessionId = activeSessionId;
+    if (sessionId == null) return;
+    const safeSessionId: string = sessionId;
+
     async function loadMessages() {
       try {
-        const msgs = await fetchMessages(activeSessionId!);
+        const msgs = await fetchMessages(safeSessionId);
         setMessages(msgs);
-        
-        // Auto open latest artifact if present
+
         const lastMsgWithArtifact = [...msgs].reverse().find(m => m.artifacts && m.artifacts.length > 0);
         if (lastMsgWithArtifact && lastMsgWithArtifact.artifacts.length > 0) {
           setActiveArtifact(lastMsgWithArtifact.artifacts[0]);
         }
       } catch (err) {
-        console.error("Failed to load messages:", err);
+        console.error('Failed to load messages:', err);
       }
     }
+
     loadMessages();
   }, [activeSessionId]);
 
-  // Scroll chat to bottom on message updates
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
   const handleNewSession = async () => {
     try {
-      const newSess = await createSession("New Growth Session", provider, model);
+      const newSess = await createSession('New Growth Session', provider, model);
       setSessions(prev => [newSess, ...prev]);
       setActiveSessionId(newSess.id);
       setMessages([]);
@@ -136,12 +138,12 @@ export function App() {
     let targetSessionId = activeSessionId;
     if (!targetSessionId) {
       try {
-        const newSess = await createSession("New Growth Session", provider, model);
+        const newSess = await createSession('New Growth Session', provider, model);
         setSessions(prev => [newSess, ...prev]);
         setActiveSessionId(newSess.id);
         targetSessionId = newSess.id;
       } catch (err) {
-        console.error("Failed to create on-demand session:", err);
+        console.error('Failed to create on-demand session:', err);
         return;
       }
     }
@@ -149,7 +151,6 @@ export function App() {
     setInputPrompt('');
     setLoading(true);
 
-    // Optimistic User Message
     const tempUserMsg: ChatMessageType = {
       id: `user-${Date.now()}`,
       session_id: targetSessionId,
@@ -163,22 +164,13 @@ export function App() {
     setMessages(prev => [...prev, tempUserMsg]);
 
     try {
-      const assistantResponse = await sendMessage(
-        targetSessionId,
-        textToSend,
-        provider,
-        model,
-        skillOverride
-      );
-
+      const assistantResponse = await sendMessage(targetSessionId, textToSend, provider, model, skillOverride);
       setMessages(prev => [...prev, assistantResponse]);
 
-      // If response contained an artifact, open it in Artifact Canvas
       if (assistantResponse.artifacts && assistantResponse.artifacts.length > 0) {
         setActiveArtifact(assistantResponse.artifacts[0]);
       }
 
-      // Update sessions list title
       const updatedSessions = await fetchSessions();
       setSessions(updatedSessions);
     } catch (err: any) {
@@ -200,7 +192,6 @@ export function App() {
 
   return (
     <div className="app-container" data-theme={theme}>
-      {/* Top Navbar */}
       <Navbar
         currentProvider={provider}
         currentModel={model}
@@ -211,12 +202,10 @@ export function App() {
         modelsData={modelsData}
         onOpenSearch={() => setIsSearchOpen(true)}
         theme={theme}
-        onToggleTheme={() => setTheme(current => current === 'light' ? 'dark' : 'light')}
+        onToggleTheme={() => setTheme(current => (current === 'light' ? 'dark' : 'light'))}
       />
 
-      {/* Main Workspace */}
-      <div className="workspace">
-        {/* Left Sidebar */}
+      <div className={`workspace ${activeArtifact ? 'has-artifact' : ''}`}>
         <Sidebar
           sessions={sessions}
           activeSessionId={activeSessionId}
@@ -224,65 +213,58 @@ export function App() {
           onNewSession={handleNewSession}
           onDeleteSession={handleDeleteSession}
           onSelectSkill={(prompt, skill) => handleSendMessage(prompt, skill)}
+          onOpenSearch={() => setIsSearchOpen(true)}
         />
 
-        {/* Center Chat View */}
         <main className="chat-section">
           <div className="messages-container">
             {messages.length === 0 ? (
-              <div style={{ margin: 'auto', width: '100%', maxWidth: '760px', padding: '28px 18px 12px' }}>
-                <div
-                  style={{
-                    background: '#fff',
-                    border: '1px solid #e7e1d8',
-                    borderRadius: '24px',
-                    padding: '28px 28px 22px',
-                    boxShadow: '0 10px 26px rgba(28, 26, 23, 0.04)'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px' }}>
-                    <div style={{ background: '#f3ece4', border: '1px solid #e7d8c6', padding: '10px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Sparkles size={22} color="#b8652d" />
-                    </div>
-                  </div>
+              <div className="empty-state">
+                <div className="eyebrow">PRODUCT &amp; GROWTH INTELLIGENCE</div>
+                <h1>
+                  Lenny <span>Growth</span>
+                  <br />
+                  Assistant
+                </h1>
+                <p>
+                  Ask questions grounded in
+                  <br />
+                  Lenny's podcast transcripts.
+                </p>
 
-                  <h2 style={{ fontFamily: 'Georgia, Times New Roman, serif', fontSize: '2rem', fontWeight: 700, marginBottom: '10px', textAlign: 'center', letterSpacing: '-0.03em' }}>
-                    The Lenny Growth Assistant
-                  </h2>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '1rem', marginBottom: '22px', lineHeight: 1.7, textAlign: 'center', maxWidth: '620px', marginLeft: 'auto', marginRight: 'auto' }}>
-                    Ask product and growth questions, explore transcript insights, and build a working artifact in one flow.
-                  </p>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(220px, 1fr))', gap: '12px' }}>
-                    <button
-                      className="skill-pill"
-                      style={{ justifyContent: 'center', padding: '16px 14px', minHeight: '72px', borderRadius: '18px', background: '#ffffff', fontSize: '0.94rem' }}
-                      onClick={() => handleSendMessage("How does Elena Verna define Product-Led Growth (PLG) and retention loops?")}
-                    >
-                      How does Elena Verna define PLG and retention loops?
-                    </button>
-                    <button
-                      className="skill-pill"
-                      style={{ justifyContent: 'center', padding: '16px 14px', minHeight: '72px', borderRadius: '18px', background: '#ffffff', fontSize: '0.94rem' }}
-                      onClick={() => handleSendMessage("Explain Shreyas Doshi's LNO framework for PM prioritization.")}
-                    >
-                      Explain Shreyas Doshi's LNO framework for PM prioritization.
-                    </button>
-                    <button
-                      className="skill-pill"
-                      style={{ justifyContent: 'center', padding: '16px 14px', minHeight: '72px', borderRadius: '18px', background: 'linear-gradient(135deg, #fff7ed, #eef5ff)', fontSize: '0.94rem', color: '#1f2937' }}
-                      onClick={() => handleSendMessage("Write a Ship 30 for 30 essay on product positioning and initial market traction.", "ship30")}
-                    >
-                      Generate a Ship 30 essay
-                    </button>
-                    <button
-                      className="skill-pill"
-                      style={{ justifyContent: 'center', padding: '16px 14px', minHeight: '72px', borderRadius: '18px', background: 'linear-gradient(135deg, #edf5ff, #f5f3ff)', fontSize: '0.94rem', color: '#1f2937' }}
-                      onClick={() => handleSendMessage("Create an interactive HTML pricing calculator based on Lenny's monetization episodes", "artifact")}
-                    >
-                      Build an interactive pricing artifact
-                    </button>
-                  </div>
+                <div className="prompt-grid">
+                  <button
+                    className="prompt-chip"
+                    onClick={() => handleSendMessage('What does April Dunford say about positioning?')}
+                  >
+                    <span className="prompt-category">POSITIONING</span>
+                    <span className="prompt-text">What does April Dunford say about positioning?</span>
+                    <span className="prompt-arrow">→</span>
+                  </button>
+                  <button
+                    className="prompt-chip"
+                    onClick={() => handleSendMessage('How does Elena Verna think about activation?')}
+                  >
+                    <span className="prompt-category">ACTIVATION</span>
+                    <span className="prompt-text">How does Elena Verna think about activation?</span>
+                    <span className="prompt-arrow">→</span>
+                  </button>
+                  <button
+                    className="prompt-chip"
+                    onClick={() => handleSendMessage("Explain Shreyas Doshi's framework.")}
+                  >
+                    <span className="prompt-category">PRODUCT STRATEGY</span>
+                    <span className="prompt-text">Explain Shreyas Doshi's framework.</span>
+                    <span className="prompt-arrow">→</span>
+                  </button>
+                  <button
+                    className="prompt-chip"
+                    onClick={() => handleSendMessage('Write a Ship 30 essay about product-led growth.', 'ship30')}
+                  >
+                    <span className="prompt-category">SHIP 30</span>
+                    <span className="prompt-text">Write a Ship 30 essay about product-led growth.</span>
+                    <span className="prompt-arrow">→</span>
+                  </button>
                 </div>
               </div>
             ) : (
@@ -298,21 +280,19 @@ export function App() {
 
             {loading && (
               <div className="message-card assistant">
-                <div className="message-bubble" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Loader2 size={18} className="animate-spin" color="#6366f1" />
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                    Searching Lenny's Podcast transcripts & generating grounded response...
-                  </span>
+                <div className="message-bubble loading-bubble">
+                  <Loader2 size={18} className="animate-spin" />
+                  <span>Searching Lenny's podcast transcripts and generating a grounded answer...</span>
                 </div>
               </div>
             )}
+
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Bottom Prompt Input Area */}
           <div className="input-area">
             <form
-              onSubmit={(e) => {
+              onSubmit={e => {
                 e.preventDefault();
                 handleSendMessage();
               }}
@@ -322,8 +302,8 @@ export function App() {
                 rows={1}
                 placeholder="Ask any product, PLG, positioning, or growth question..."
                 value={inputPrompt}
-                onChange={(e) => setInputPrompt(e.target.value)}
-                onKeyDown={(e) => {
+                onChange={e => setInputPrompt(e.target.value)}
+                onKeyDown={e => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     handleSendMessage();
@@ -337,7 +317,6 @@ export function App() {
           </div>
         </main>
 
-        {/* Right Side-by-Side Artifact Drawer */}
         {activeArtifact && (
           <ArtifactViewer
             artifact={activeArtifact}
@@ -346,13 +325,11 @@ export function App() {
         )}
       </div>
 
-      {/* Citation Details Modal */}
       <CitationModal
         citation={selectedCitation}
         onClose={() => setSelectedCitation(null)}
       />
 
-      {/* Transcript Search Overlay */}
       <TranscriptSearchModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}

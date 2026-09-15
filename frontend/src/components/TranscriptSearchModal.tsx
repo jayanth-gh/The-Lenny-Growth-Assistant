@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Search, BookOpen, ExternalLink, Loader2 } from 'lucide-react';
+import { X, Search, ExternalLink, Loader2 } from 'lucide-react';
 import { searchTranscripts } from '../api/client';
 import { TranscriptSearchResult } from '../types';
 
@@ -32,65 +32,45 @@ export const TranscriptSearchModal: React.FC<TranscriptSearchModalProps> = ({ is
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" style={{ maxWidth: '750px' }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, color: 'var(--accent-primary)' }}>
+      <div className="modal-content search-modal-content" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <div className="modal-title">
             <Search size={18} />
-            <span>Search Lenny's Podcast Transcripts</span>
+            <span>Search Lenny's podcast</span>
           </div>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+          <button type="button" className="icon-button" onClick={onClose} aria-label="Close search">
             <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSearch} style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+        <form className="search-form" onSubmit={handleSearch}>
           <input
             type="text"
-            placeholder="Search keywords, frameworks, or guests (e.g. 'Elena Verna PLG', 'Shreyas LNO')..."
+            className="search-input"
+            placeholder="Search keywords, frameworks, or guests..."
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            style={{
-              flex: 1,
-              background: 'var(--bg-primary)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '8px',
-              padding: '10px 14px',
-              color: 'var(--text-main)',
-              outline: 'none'
-            }}
+            onChange={e => setQuery(e.target.value)}
           />
-          <button
-            type="submit"
-            className="new-chat-btn"
-            style={{ width: 'auto', padding: '0 20px' }}
-            disabled={loading}
-          >
+          <button type="submit" className="search-button" disabled={loading}>
             {loading ? <Loader2 size={16} className="animate-spin" /> : 'Search'}
           </button>
         </form>
 
-        <div style={{ maxHeight: '400px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className="search-results">
           {results.length === 0 ? (
-            <div style={{ textAlign: 'center', color: 'var(--text-subtle)', padding: '30px 0' }}>
+            <div className="empty-session-copy">
               {loading ? 'Searching transcripts...' : 'Enter a search term to find relevant podcast excerpts.'}
             </div>
           ) : (
             results.map((res, idx) => (
-              <div key={idx} style={{ background: 'var(--bg-primary)', padding: '14px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                  <span style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.9rem' }}>{res.episode_title}</span>
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-subtle)' }}>Guest: {res.guest_name}</span>
+              <div key={`${res.episode_title}-${idx}`} className="search-result-item">
+                <div className="search-result-header">
+                  <span className="search-result-title">{res.episode_title}</span>
+                  <span className="search-result-guest">Guest: {res.guest_name}</span>
                 </div>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: '8px' }}>
-                  {res.content}
-                </p>
-                <a
-                  href={res.episode_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ fontSize: '0.78rem', color: 'var(--accent-primary)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                >
-                  <span>View Episode Source</span>
+                <p className="search-result-copy">{res.content}</p>
+                <a className="search-result-link" href={res.episode_url} target="_blank" rel="noopener noreferrer">
+                  <span>View episode source</span>
                   <ExternalLink size={12} />
                 </a>
               </div>

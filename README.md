@@ -82,11 +82,12 @@ docker compose up --build -d
 docker compose ps
 ```
 
-Wait for `lenny_postgres` and `lenny_pi_agent` to show `healthy`, and for `lenny_assistant_app` to show `Up`.
+Wait for `lenny_postgres`, `lenny_pi_agent`, and `lenny_assistant_app` to show `healthy`, and for `lenny_frontend` to show `Up`.
+No separate frontend server is required.
 
 ### 6) Open the application
 
-Open [http://localhost:8000](http://localhost:8000). The Pi health endpoint is [http://localhost:8090/health](http://localhost:8090/health).
+Open [http://localhost:8000](http://localhost:8000). The public frontend proxies `/api/` requests to the internal FastAPI `app:8000` service. The Pi health endpoint is [http://localhost:8090/health](http://localhost:8090/health).
 
 ---
 

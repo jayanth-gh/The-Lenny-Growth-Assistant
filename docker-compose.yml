@@ -43,8 +43,6 @@ services:
       dockerfile: Dockerfile
     container_name: lenny_assistant_app
     restart: always
-    ports:
-      - "8001:8000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
@@ -58,6 +56,23 @@ services:
       db:
         condition: service_healthy
       pi-agent:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lenny_frontend
+    restart: always
+    ports:
+      - "8000:80"
+    depends_on:
+      app:
         condition: service_healthy
 
 volumes:

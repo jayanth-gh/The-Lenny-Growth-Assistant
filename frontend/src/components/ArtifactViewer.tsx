@@ -82,7 +82,7 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({ artifact, onClos
           <span>{artifact.title}</span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="artifact-header-actions">
           <div className="artifact-tabs">
             <button
               className={`artifact-tab ${activeTab === 'preview' ? 'active' : ''}`}
@@ -100,24 +100,23 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({ artifact, onClos
             </button>
           </div>
 
-          <button onClick={handleCopy} title="Copy Content" style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+          <button className="icon-button" onClick={handleCopy} title="Copy Content">
             {copied ? <Check size={16} color="#10b981" /> : <Copy size={16} />}
           </button>
 
-          <button onClick={handleDownload} title="Download Artifact" style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+          <button className="icon-button" onClick={handleDownload} title="Download Artifact">
             <Download size={16} />
           </button>
 
-          <button onClick={onClose} title="Close Panel" style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+          <button className="icon-button" onClick={onClose} title="Close Panel">
             <X size={18} />
           </button>
         </div>
       </div>
 
-      {/* Security Banner */}
-      <div style={{ background: 'rgba(99, 102, 241, 0.08)', padding: '6px 16px', fontSize: '0.75rem', color: '#a5b4fc', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <div className="artifact-security">
         <ShieldAlert size={13} />
-        <span>Sandboxed Isolated Execution ({isHtml ? 'HTML/CSS IFrame Sandbox' : 'Markdown Native Viewer'})</span>
+        <span>Sandboxed isolated execution ({isHtml ? 'HTML/CSS iframe sandbox' : 'Markdown native viewer'})</span>
       </div>
 
       {/* Body View */}
@@ -132,7 +131,7 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({ artifact, onClos
             />
           ) : (
             <div
-              className="markdown-body"
+              className="article-document markdown-body"
               style={{ lineHeight: 1.6 }}
               dangerouslySetInnerHTML={{ __html: parsedMarkdownDoc }}
             />

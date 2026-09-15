@@ -1,6 +1,6 @@
 import React from 'react';
 import { marked } from 'marked';
-import { BookOpen, ExternalLink, Layout, Copy, Check } from 'lucide-react';
+import { Layout, Copy, Check, ExternalLink } from 'lucide-react';
 import { ChatMessage as ChatMessageType, Citation, Artifact } from '../types';
 
 interface ChatMessageProps {
@@ -36,65 +36,58 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
     <div className={`message-card ${isUser ? 'user' : 'assistant'}`}>
       <div className="message-bubble">
         {isUser ? (
-          <div>{message.content}</div>
+          <div className="user-message-copy">{message.content}</div>
         ) : (
           <>
-            <div
-              className="markdown-body"
-              dangerouslySetInnerHTML={{ __html: parsedMarkdown }}
-            />
+            <div className="assistant-label">Lenny Growth Assistant</div>
+            <div className="markdown-body" dangerouslySetInnerHTML={{ __html: parsedMarkdown }} />
 
-            {/* Render Artifact Triggers */}
             {message.artifacts && message.artifacts.length > 0 && (
-              <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div className="artifact-stack">
                 {message.artifacts.map((artifact, idx) => (
                   <button
                     key={artifact.id || idx}
+                    type="button"
                     className="artifact-trigger-btn"
                     onClick={() => onOpenArtifact(artifact)}
                   >
                     <Layout size={16} />
-                    <span>View Generated Artifact: {artifact.title}</span>
+                    <span>View generated artifact: {artifact.title}</span>
                   </button>
                 ))}
               </div>
             )}
 
-            {/* Grounded Citation Chips */}
             {message.citations && message.citations.length > 0 && (
-              <div className="citations-container">
-                <div style={{ width: '100%', fontSize: '0.75rem', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase' }}>
-                  Grounded Sources:
+              <div className="citation-panel">
+                <div className="citation-panel-header">These sources ground this answer.</div>
+                <div className="citation-list">
+                  {message.citations.map((cite, idx) => (
+                    <button
+                      type="button"
+                      key={`${cite.episode_title}-${idx}`}
+                      className="citation-item"
+                      onClick={() => onOpenCitation(cite)}
+                      title="Open source citation"
+                    >
+                      <div className="citation-number">{String(idx + 1).padStart(2, '0')}</div>
+                      <div className="citation-body">
+                        <div className="citation-guest">{cite.guest_name}</div>
+                        <div className="citation-episode">{cite.episode_title}</div>
+                        <div className="citation-excerpt">{cite.excerpt}</div>
+                        <div className="citation-link">
+                          <span>Open source</span>
+                          <ExternalLink size={12} />
+                        </div>
+                      </div>
+                    </button>
+                  ))}
                 </div>
-                {message.citations.map((cite, idx) => (
-                  <div
-                    key={idx}
-                    className="citation-chip"
-                    onClick={() => onOpenCitation(cite)}
-                    title="Click to view transcript excerpt"
-                  >
-                    <BookOpen size={12} />
-                    <span>{cite.guest_name} ({cite.episode_title.slice(0, 25)}...)</span>
-                  </div>
-                ))}
               </div>
             )}
 
-            {/* Copy Button */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
-              <button
-                onClick={handleCopy}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--text-subtle)',
-                  cursor: 'pointer',
-                  fontSize: '0.75rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
+            <div className="message-tools">
+              <button type="button" className="copy-button" onClick={handleCopy}>
                 {copied ? <Check size={12} color="#10b981" /> : <Copy size={12} />}
                 <span>{copied ? 'Copied' : 'Copy'}</span>
               </button>
