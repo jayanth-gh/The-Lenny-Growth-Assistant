@@ -49,6 +49,7 @@ services:
       - DATABASE_URL=postgresql+asyncpg://lenny_user:lenny_password@db:5432/lenny_growth_db
       - OLLAMA_BASE_URL=http://host.docker.internal:11434
       - PI_AGENT_URL=http://pi-agent:8090
+      - OLLAMA_REQUEST_TIMEOUT_SECONDS=600
       - DEFAULT_LLM_PROVIDER=ollama
       - DEFAULT_LLM_MODEL=llama3.2
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}

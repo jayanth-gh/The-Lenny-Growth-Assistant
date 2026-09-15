@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     DEFAULT_LLM_MODEL: str = "llama3.2"
     OLLAMA_BASE_URL: str = "http://host.docker.internal:11434"
     PI_AGENT_URL: str = "http://pi-agent:8090"
-    OLLAMA_REQUEST_TIMEOUT_SECONDS: float = 180.0
+    OLLAMA_REQUEST_TIMEOUT_SECONDS: float = 600.0
     OLLAMA_MAX_OUTPUT_TOKENS: int = 1200
     CLOUD_LLM_PROVIDER: str = "anthropic"
     CLOUD_LLM_MODEL: str = "claude-3-5-sonnet-20241022"

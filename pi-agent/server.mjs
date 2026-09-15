@@ -89,7 +89,7 @@ function runPi(prompt, systemPrompt, maxTokens) {
     const timeout = setTimeout(() => {
       child.kill("SIGTERM");
       reject(new Error(`Pi agent timed out after ${maxTokens} output-token limit`));
-    }, 180000);
+    }, 600000);
 
     const finish = (error, value) => {
       if (settled) return;
